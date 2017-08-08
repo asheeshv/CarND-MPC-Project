@@ -51,6 +51,7 @@ public:
         
         fg[0] = 0;
         
+        //This is the implementation of the cost function
         // Define weights for different terms of objective
         const double cte_weight = 2000;
         const double epsi_weight = 2000;

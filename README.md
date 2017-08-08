@@ -1,6 +1,65 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+Project Description
+
+### Model predictive control reframes the task of following a trajectory as an optimization problem. The solution to the optimization problem is the optimal trajectory. This involves simulating the different actuator inputs, predicting the resulting rajectory and selecting that trajectory with minimum cost.
+
+Model
+
+### MPC uses an optimizer to find the control inputs and minimize the cost function. Only the very first set of control inputs are executed. This brings the vehicle to a new state and the process is repeated. 
+
+### Following are the steps defined as part of setting up the model
+* Define the length of the trajectory, N, and duration of each timestep, dt. Clearly, the number of variables optimized is directly proportional to N, so this must be considered in case there are computational constraints
+
+* Define the vehicle model. Vehicle mode is a set of equations that describe the system behavior and updates across steps. In our case it's a simplified kinematic model described by a state of six parameters.
+  * x car position (x-axis)
+  * y car position (y-axis)
+  * psi car's heading direction
+  * v car's velocity
+  * cte cross-track error
+  * epsi orientation error
+  
+  Vehicle model update equations are defined as follows:
+    * xt+1 = xt + vt ∗ cos( ψt ) ∗ dt
+    * yt+1 = yt + vt ∗ sin( ψt ) ∗ dt
+    * ψt+1 = ψt + vt / Lf ∗ δt ∗ dt
+    * vt+1 = vt + at ∗ dt
+    * ctet+1 = f(xt) − yt + ( vt ∗ sin( eψt ∗ dt )
+    * eψt+1 = ψt − ψdest + ( vt / Lf ∗ δt ∗ dt )
+
+* Contraints necessary to model contrants in actuators' respose. For instance, a vehicle will never be able to steer 90 deegrees in a single time step. In this project we set these constraints as follows:
+
+steering: bounded in range [-25°, 25°]
+acceleration: bounded in range [-1, 1] from full brake to full throttle
+
+* Cost Function
+  * Usually cost function is made of the sum of different terms. Besides the main terms that depends on reference values (e.g. cross-track or heading error), other regularization terms are present to enforce the smoothness in the controller response (e.g. avoid abrupt steering).
+  The cost function is implemented at lines 54-79 at [MPC.cpp](https://github.com/asheeshv/CarND-MPC-Project/blob/master/src/MPC.cpp)
+
+  ### Tuning Trajectory Parameters
+  
+  Both ***N*** and ***dt*** are fundamental parameters in the optimization process. In particular, ***T = N * dt*** constitutes the *prediction horizon* considered during optimization. These values have to be tuned keeping in mind a couple of things:
+  - large *dt* result in less frequent actuations, which in turn could result in the difficulty in following a continuous reference trajectory (so called *discretization error*) 
+  - despite the fact that having a large *T* could benefit the control process, consider that predicting too far in the future does not make sense in real-world scenarios.
+  - large *T* and small *dt* lead to large *N*. As mentioned above, the number of variables optimized is directly proportional to *N*, so will lead to an higher computational cost.
+
+In the current project I empirically set (by visually inspecting the vehicle's behavior in the simulator) these parameters to be ***N=10*** and ***dt=0.1***, for a total of ***T=1s*** in the future. 
+
+### Changing Reference System
+
+Simulator provides coordinates in global reference system. In order to ease later computation, these are converted into car's own reference system at lines 98-105 [main.cpp](https://github.com/asheeshv/CarND-MPC-Project/blob/master/src/main.cpp)
+
+
+### Dealing with Latency
+
+To mimic real driving conditions where the car does actuate the commands instantly, a *100ms* latency delay has been introduced before sending the data message to the simulator (line 185 in [main.cpp](https://github.com/asheeshv/CarND-MPC-Project/blob/master/src/main.cpp)). In order to deal with latency, state is predicted one time step ahead before feeding it to the solver (lines 126-131 in [main.cpp](https://github.com/asheeshv/CarND-MPC-Project/blob/master/src/main.cpp)).
+
+### Simulation Video
+The simulation video is available [here](https://github.com/asheeshv/CarND-MPC-Project/blob/master/MPC-Video.mp4)
+
+
+
 ---
 
 ## Dependencies
